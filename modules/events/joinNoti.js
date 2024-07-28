@@ -6,8 +6,8 @@ module.exports.config = {
   description: "GROUP UPDATE NOTIFICATION"
 };
 
-const ADMIN = 'YOUR_NAME';
-const FB_LINK = 'YOUR_FACEBOOK_LINK';
+const ADMIN = '𝙲𝚑𝚞𝚛𝚌𝚑𝚒𝚕𝚕 𝙰𝚐';
+const FB_LINK = 'https://www.facebook.com/Churchill.Dev4100';
 
 const fs = require('fs-extra');
 const { loadImage, createCanvas, registerFont } = require("canvas");
