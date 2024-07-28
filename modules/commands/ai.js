@@ -1,39 +1,73 @@
-const { Hercai } = require('hercai');
-const herc = new Hercai();
+const axios = require('axios');
 
 module.exports.config = {
   name: 'ai',
-  version: '1.1.0',
-  hasPermssion: 0,
-  credits: 'Yan Maglinte | Liane Cagara',
-  description: 'An AI command using Hercai API!',
-  usePrefix: false,
-  allowPrefix: true,
-  commandCategory: 'chatbots',
-  usages: 'Ai [prompt]',
-  cooldowns: 5,
+  version: '1.0.0',
+  role: 0,
+  hasPrefix: false,
+  aliases: ['ai'],
+  description: "Ask AI a question",
+  usage: "ai [question]",
+  credits: 'churchill',
+  cooldown: 3,
 };
 
-module.exports.run = async function ({ api, event, args, box }) {
-  const prompt = args.join(' ');
-  if (!box) {
-    return api.sendMessage(`Unsupported.`, event.threadID);
+module.exports.run = async function({ api, event, args }) {
+  const prompt = args.join(" ");
+  const threadID = event.threadID;
+  const senderID = event.senderID;
+  const messageID = event.messageID;
+
+  if (!prompt) {
+    api.sendMessage('Please provide a question, ex: ai what is love?', threadID, messageID);
+    return;
   }
 
+  const responseMessage = await new Promise(resolve => {
+    api.sendMessage('🤖 𝚃𝚄𝚁𝙱𝙾 𝙰𝙽𝚂𝚆𝙴𝚁𝙸𝙽𝙶...', threadID, (err, info) => {
+      if (err) {
+        console.error('Error sending message:', err);
+        return;
+      }
+      resolve(info);
+    });
+  });
+
+  const apiUrl = `https://joshweb.click/new/gpt-3_5-turbo?prompt=${encodeURIComponent(prompt)}`;
+
   try {
-    // Available Models: "v3", "v3-32k", "turbo", "turbo-16k", "gemini"
-    if (!prompt) {
-      box.reply('Please specify a message!');
-      box.react('❓');
-    } else {
-      const info = await box.reply(`Fetching answer...`);
-      box.react('⏱️');
-      const response = await herc.question({ model: 'v3', content: prompt });
-      await box.edit(response.reply, info.messageID);
-      box.react('');
-    }
+    const startTime = Date.now();
+    const response = await axios.get(apiUrl);
+    const result = response.data;
+    const aiResponse = result.result.reply;
+    const endTime = Date.now();
+    const responseTime = ((endTime - startTime) / 1000).toFixed(2);
+
+    api.getUserInfo(senderID, async (err, ret) => {
+      if (err) {
+        console.error('Error fetching user info:', err);
+        await api.editMessage('Error fetching user info.', responseMessage.messageID);
+        return;
+      }
+
+      const userName = ret[senderID].name;
+      const formattedResponse = `🤖 𝙶𝙿𝚃+ 𝚃𝚄𝚁𝙱𝙾 𝙰𝙸
+━━━━━━━━━━━━━━━━━━
+${aiResponse}
+━━━━━━━━━━━━━━━━━━
+🗣 𝙰𝚜𝚔𝚎𝚍 𝚋𝚢: ${userName}
+⏰ 𝚁𝚎𝚜𝚙𝚘𝚗𝚜𝚎 𝚃𝚒𝚖𝚎: ${responseTime}s`;
+
+      try {
+        await api.editMessage(formattedResponse, responseMessage.messageID);
+      } catch (error) {
+        console.error('Error editing message:', error);
+        api.sendMessage('Error editing message: ' + error.message, threadID, messageID);
+      }
+    });
   } catch (error) {
-    box.reply('⚠️ Something went wrong: ' + error);
-    box.react('⚠️');
+    console.error('Error:', error);
+    const errorMessage = `⚠️ Error: ${error.message}. Please try using Adobo command.`;
+    await api.editMessage(errorMessage, responseMessage.messageID);
   }
 };
