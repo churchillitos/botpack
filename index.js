@@ -131,7 +131,7 @@ app.get("/", function (req, res) {
 });
 app.listen(2024, () => {
   global.loading.log(
-    `Bot is running on port: 2024`,
+    `Bot is running on port: 3000`,
     "SYSTEM",
   );
 });
